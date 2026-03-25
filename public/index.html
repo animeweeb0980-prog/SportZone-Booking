@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SportZone</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-left">
+    <div class="auth-brand">⚡ SportZone</div>
+    <h1>Book Courts.<br>Join Events.<br>Track Progress.</h1>
+    <p>The all-in-one platform for sports court booking, tournaments, and leaderboards.</p>
+    <div class="auth-sports">
+      <span>🎾 Tennis</span><span>🏓 Pickleball</span><span>🏸 Badminton</span>
+      <span>⚽ Football</span><span>🏐 Volleyball</span>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="tab-row">
+        <button class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="tab" id="tab-register" onclick="switchTab('register')">Sign Up</button>
+      </div>
+      <div id="login-form">
+        <h2>Welcome back!</h2>
+        <p class="sub">Sign in to your account</p>
+        <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="you@email.com"/></div>
+        <div class="field"><label>Password</label><input id="login-password" type="password" placeholder="Your password"/></div>
+        <div id="login-error" class="err"></div>
+        <button class="btn-primary" onclick="doLogin()">Sign In</button>
+        <p class="hint">No account? <a href="#" onclick="switchTab('register')">Sign up free</a></p>
+      </div>
+      <div id="register-form" class="hidden">
+        <h2>Create account</h2>
+        <p class="sub">Join SportZone today</p>
+        <div class="field"><label>Full Name</label><input id="reg-name" type="text" placeholder="Your name"/></div>
+        <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="you@email.com"/></div>
+        <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="Min. 4 characters"/></div>
+        <div id="reg-error" class="err"></div>
+        <button class="btn-primary green" onclick="doRegister()">Create Account</button>
+        <p class="hint">Already have one? <a href="#" onclick="switchTab('login')">Sign in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="main-app" class="hidden">
+  <header>
+    <div class="logo">⚡ SportZone</div>
+    <nav>
+      <button class="nb active" onclick="showPage('home',this)">Home</button>
+      <button class="nb" onclick="showPage('courts',this)">Courts</button>
+      <button class="nb" onclick="showPage('bookings',this)">My Bookings</button>
+      <button class="nb" onclick="showPage('events',this)">Events</button>
+      <button class="nb" onclick="showPage('leaderboard',this)">Leaderboard</button>
+      <button class="nb" onclick="showPage('locations',this)">Locations</button>
+    </nav>
+    <div class="huser">
+      <div class="av" id="uav">J</div>
+      <span id="uname">Jay</span>
+      <button class="logout" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <div id="page-home" class="page">
+    <div class="home-hero">
+      <div class="hero-left">
+        <h2>Good to see you,<br><span id="hero-name">Jay</span>! 👋</h2>
+        <p>Ready to play? Book a court or join an event today.</p>
+        <div class="hero-btns">
+          <button class="btn-primary" onclick="showPage('courts', document.querySelectorAll('.nb')[1])">Book a Court</button>
+          <button class="btn-outline" onclick="showPage('events', document.querySelectorAll('.nb')[3])">View Events</button>
+        </div>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
+    </div>
+    <div class="home-sections">
+      <div class="home-section">
+        <h3>Quick Book</h3>
+        <div class="quick-sports">
+          <button onclick="quickBook('tennis')"><span>🎾</span>Tennis</button>
+          <button onclick="quickBook('pickleball')"><span>🏓</span>Pickleball</button>
+          <button onclick="quickBook('badminton')"><span>🏸</span>Badminton</button>
+          <button onclick="quickBook('football')"><span>⚽</span>Football</button>
+          <button onclick="quickBook('volleyball')"><span>🏐</span>Volleyball</button>
+        </div>
+      </div>
+      <div class="home-section">
+        <h3>Upcoming Events</h3>
+        <div id="home-events"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COURTS -->
+  <div id="page-courts" class="page hidden">
+    <div class="page-head">
+      <div><h2>Book a Court</h2><p>Choose your sport and pick a time slot</p></div>
+    </div>
+    <div class="filter-bar">
+      <button class="chip active" onclick="filterCourt('all',this)">All</button>
+      <button class="chip" onclick="filterCourt('tennis',this)">🎾 Tennis</button>
+      <button class="chip" onclick="filterCourt('pickleball',this)">🏓 Pickleball</button>
+      <button class="chip" onclick="filterCourt('badminton',this)">🏸 Badminton</button>
+      <button class="chip" onclick="filterCourt('football',this)">⚽ Football</button>
+      <button class="chip" onclick="filterCourt('volleyball',this)">🏐 Volleyball</button>
+    </div>
+    <div id="courts-grid"></div>
+  </div>
+
+  <!-- MY BOOKINGS -->
+  <div id="page-bookings" class="page hidden">
+    <div class="page-head"><h2>My Bookings</h2><p>Your upcoming and past reservations</p></div>
+    <div class="content-wrap" id="bookings-list"></div>
+  </div>
+
+  <!-- EVENTS -->
+  <div id="page-events" class="page hidden">
+    <div class="page-head"><h2>Events & Tournaments</h2><p>Join competitions and clinics near you</p></div>
+    <div class="content-wrap" id="events-list"></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="page-leaderboard" class="page hidden">
+    <div class="page-head"><h2>Leaderboard</h2><p>Top players ranked by sessions played</p></div>
+    <div class="content-wrap">
+      <div class="lb-tabs">
+        <button class="chip active" onclick="loadLeaderboard('overall',this)">Overall</button>
+        <button class="chip" onclick="loadLeaderboard('tennis',this)">🎾 Tennis</button>
+        <button class="chip" onclick="loadLeaderboard('pickleball',this)">🏓 Pickleball</button>
+        <button class="chip" onclick="loadLeaderboard('badminton',this)">🏸 Badminton</button>
+        <button class="chip" onclick="loadLeaderboard('football',this)">⚽ Football</button>
+        <button class="chip" onclick="loadLeaderboard('volleyball',this)">🏐 Volleyball</button>
+      </div>
+      <div id="leaderboard-table"></div>
+    </div>
+  </div>
+
+  <!-- LOCATIONS -->
+  <div id="page-locations" class="page hidden">
+    <div class="page-head"><h2>Locations</h2><p>Find courts near you</p></div>
+    <div class="content-wrap">
+      <div class="locations-grid" id="locations-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div id="modal" class="modal-bg hidden">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-sport" id="modal-sport-emoji">🎾</div>
+    <h3 id="modal-court-name">Court</h3>
+    <p id="modal-court-loc" class="modal-loc"></p>
+    <div class="mfield"><label>Date</label><input id="bdate" type="date"/></div>
+    <div class="mfield"><label>Time Slot</label><div id="slots"><p class="shint">Choose a date first</p></div></div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="confirm-btn" onclick="confirmBooking()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-pop" class="modal-bg hidden">
+  <div class="success-card">
+    <div class="success-check">✅</div>
+    <h3>Booked!</h3>
+    <p id="success-msg">Your court is confirmed.</p>
+    <button class="btn-primary" onclick="closeSuccess()">Great!</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
