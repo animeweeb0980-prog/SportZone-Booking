@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify connection configuration
-transporter.verify(function(error, success) {
+transporter.verify(function (error, success) {
   if (error) {
     console.warn("Email service is not configured correctly or .env is missing. Emails will gracefully fail to send.");
   } else {
@@ -20,11 +20,49 @@ transporter.verify(function(error, success) {
   }
 });
 
+const generateGoogleCalendarUrl = (title, location, dateStr, timeStr = '09:00', durationMinutes = 60) => {
+  if (!dateStr) return '';
+  if (!timeStr) timeStr = '09:00';
+
+  const [year, month, day] = dateStr.split('-');
+  const [hour, minute] = (timeStr || '09:00').split(':');
+
+  // Format: YYYYMMDDTHHMMSS
+  const start = `${year}${month}${day}T${hour}${minute}00`;
+
+  // Calculate end time
+  const d = new Date(year, month - 1, day, hour, minute);
+  d.setMinutes(d.getMinutes() + durationMinutes);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const end = `${y}${m}${dd}T${hh}${mm}00`;
+
+  const baseUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+  const params = new URLSearchParams({
+    text: title,
+    dates: `${start}/${end}`,
+    details: 'Reserved via SportZone Court Booking System.',
+    location: location
+  });
+
+  return `${baseUrl}&${params.toString()}`;
+};
+
 export const sendBookingConfirmation = async (user_email, user_name, court_name, location, date, time_slot) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.log("Skipping email send. Configure EMAIL_USER and EMAIL_PASS in .env.");
     return false;
   }
+
+  const calendarUrl = generateGoogleCalendarUrl(
+    `Booking: ${court_name}`,
+    location,
+    date,
+    time_slot
+  );
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -41,6 +79,10 @@ export const sendBookingConfirmation = async (user_email, user_name, court_name,
             <p style="margin: 5px 0;"><strong>Location:</strong> ${location}</p>
             <p style="margin: 5px 0;"><strong>Date:</strong> ${date}</p>
             <p style="margin: 5px 0;"><strong>Time:</strong> ${time_slot}</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${calendarUrl}" style="background-color: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">📅 Add to Google Calendar</a>
           </div>
           
           <p style="color: #555; font-size: 14px;">If you need to cancel or change your booking, please log in to your dashboard.</p>
@@ -67,6 +109,14 @@ export const sendEventRegistrationEmail = async (user_email, user_name, event_ti
     return false;
   }
 
+  const calendarUrl = generateGoogleCalendarUrl(
+    `Event: ${event_title}`,
+    location,
+    date,
+    time,
+    120 // Events typically last longer, defaulting to 2 hours
+  );
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: user_email,
@@ -82,6 +132,10 @@ export const sendEventRegistrationEmail = async (user_email, user_name, event_ti
             <p style="margin: 5px 0;"><strong>Location:</strong> ${location}</p>
             <p style="margin: 5px 0;"><strong>Date:</strong> ${date}</p>
             <p style="margin: 5px 0;"><strong>Time:</strong> ${time}</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${calendarUrl}" style="background-color: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">📅 Add to Google Calendar</a>
           </div>
           
           <p style="color: #555; font-size: 14px;">Please arrive 15 minutes early and bring your A-game!</p>

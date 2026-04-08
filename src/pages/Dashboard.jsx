@@ -24,6 +24,9 @@ export default function Dashboard() {
   const [slots, setSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  
   useEffect(() => {
     loadData(activeTab);
   }, [activeTab]);
@@ -85,6 +88,23 @@ export default function Dashboard() {
     if (!window.confirm("Cancel this booking?")) return;
     await request(`/bookings/${id}`, { method: 'DELETE' });
     loadData('bookings');
+  };
+
+  const toggleEventRegistration = async (event) => {
+    setSelectedEvent(event);
+    setEventModalOpen(true);
+  };
+
+  const confirmEventRegistration = async () => {
+    if (!selectedEvent) return;
+    const isReg = selectedEvent.is_registered === 1;
+    try {
+      await request(`/events/${selectedEvent.id}/register`, { method: isReg ? 'DELETE' : 'POST', body: JSON.stringify({}) });
+      setEventModalOpen(false);
+      loadData('events');
+    } catch(err) { 
+      alert(err.message); 
+    }
   };
 
   return (
@@ -210,37 +230,39 @@ export default function Dashboard() {
                <div className="animate-slide-up">
                  <h2 className="heading-md">Upcoming Events</h2>
                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginTop: '30px' }}>
-                   {events.length === 0 ? <p className="text-muted">No events currently scheduled.</p> : events.map(e => (
-                     <div key={e.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                         <span style={{ fontSize: '2rem' }}>{EMOJIS[e.sport]}</span>
-                         <span className="status-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none' }}>{e.registered_count} / {e.max_participants} Registered</span>
-                       </div>
-                       <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>{e.title}</h3>
-                       <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                         <Calendar size={16} /> {e.event_date} at {e.event_time}
-                       </p>
-                       <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                         <MapPin size={16} /> {e.location}
-                       </p>
-                       <p style={{ fontSize: '0.95rem', marginBottom: '24px', flex: 1 }}>{e.description}</p>
-                       <button 
-                         className="btn btn-primary" 
-                         disabled={e.registered_count >= e.max_participants}
-                         onClick={async () => {
-                           if(window.confirm(`Register for ${e.title}?`)) {
-                             try {
-                               await request(`/events/${e.id}/register`, { method: 'POST', body: JSON.stringify({}) });
-                               alert('Registered successfully!');
-                               loadData('events');
-                             } catch(err) { alert(err.message); }
-                           }
-                         }}
-                       >
-                         {e.registered_count >= e.max_participants ? 'Event Full' : 'Register Now'}
-                       </button>
-                     </div>
-                   ))}
+                    {events.length === 0 ? <p className="text-muted">No events currently scheduled.</p> : events.map(e => (
+                      <div key={e.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <span style={{ fontSize: '2rem' }}>{EMOJIS[e.sport]}</span>
+                          <span className="status-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none' }}>{e.registered_count} / {e.max_participants} Registered</span>
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>{e.title}</h3>
+                        <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Calendar size={16} /> {e.event_date} at {e.event_time}
+                        </p>
+                        <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <MapPin size={16} /> {e.location}
+                        </p>
+                        <p style={{ fontSize: '0.95rem', marginBottom: '24px', flex: 1 }}>{e.description}</p>
+                        <button 
+                          className={`btn ${e.is_registered ? 'btn-secondary' : 'btn-primary'}`}
+                          disabled={!e.is_registered && e.registered_count >= e.max_participants}
+                          onClick={() => toggleEventRegistration(e)}
+                        >
+                          {e.is_registered ? 'Registered ✅' : e.registered_count >= e.max_participants ? 'Event Full' : 'Register Now'}
+                        </button>
+                        {e.is_registered === 1 && (
+                          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                            <button 
+                              style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
+                              onClick={() => toggleEventRegistration(e)}
+                            >
+                              Cancel Registration
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                  </div>
                </div>
             )}
@@ -337,6 +359,45 @@ export default function Dashboard() {
                 Confirm Booking
               </button>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Event Registration Modal */}
+      <div className={`modal-overlay ${eventModalOpen ? 'open' : ''}`}>
+        <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+          <button className="modal-close" onClick={() => setEventModalOpen(false)}><X size={24} /></button>
+          
+          {selectedEvent && (
+            <div className="animate-slide-up">
+              <div style={{ marginBottom: '24px' }}>
+                <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '16px' }}>{EMOJIS[selectedEvent.sport]}</span>
+                <h3 className="heading-md" style={{ marginBottom: '8px' }}>{selectedEvent.title}</h3>
+                <p className="text-muted">{selectedEvent.is_registered ? 'Already registered for this event.' : 'Join the game! Confirm your registration below.'}</p>
+              </div>
+
+              <div style={{ background: 'var(--bg-tertiary)', padding: '20px', borderRadius: 'var(--radius-md)', marginBottom: '24px', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: '0.9rem' }}>
+                  <Calendar size={16} color="var(--accent-primary)" />
+                  <span>{selectedEvent.event_date} at {selectedEvent.event_time}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem' }}>
+                  <MapPin size={16} color="var(--accent-primary)" />
+                  <span>{selectedEvent.location}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button 
+                  className={`btn ${selectedEvent.is_registered ? 'btn-secondary' : 'btn-primary'}`}
+                  style={{ width: '100%', padding: '14px' }}
+                  onClick={confirmEventRegistration}
+                >
+                  {selectedEvent.is_registered ? 'Cancel Registration' : 'Confirm Registration'}
+                </button>
+                <button className="btn btn-secondary" style={{ width: '100%', background: 'transparent' }} onClick={() => setEventModalOpen(false)}>Maybe Later</button>
+              </div>
+            </div>
           )}
         </div>
       </div>

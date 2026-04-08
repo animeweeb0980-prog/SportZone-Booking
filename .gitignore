@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SQLite databases
+server/sportzone.db
+server/sportzone.db-shm
+server/sportzone.db-wal
+
+# Environment secrets
+.env
+
+# Project archives
+*.zip
